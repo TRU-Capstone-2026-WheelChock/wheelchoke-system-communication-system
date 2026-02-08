@@ -1,28 +1,28 @@
 # src/msg_handler/backends/zmq.py
 import zmq
 import logging
-from ..base import IBasePublisher
+from ..pub_base import BasePublisher
 from ..schemas import SensorMessage
 
 logger = logging.getLogger(__name__)
 
-class ZmqPublisher(IBasePublisher):
-    def __init__(self, endpoint: str = "tcp://*:5555"):
+class ZmqPublisher(BasePublisher):
+    def __init__(self, endpoint: str = "tcp://*:5555", is_client : bool = True):
+        """
+        Args:
+            endpoint (str): ZMQ connection string.
+            is_client (bool): 
+                If True, performs 'connect' (Initiate connection).
+                If False, performs 'bind' (Wait for connections).
+        """
+
         super().__init__()
         self.endpoint = endpoint
+        self.is_client = is_client
         self.ctx = None
         self.socket = None
 
-    def __enter__(self):
-        logger.info("Preparing to connect")
-        self.connect()
-        return self
-    
-    def __exit__(self, exc_type, exc_value, traceback):
-        logger.info("Ending: self distracting.")
-        self.close()
-
-    def connect(self):
+    def _connect_impl(self):
         if self.socket:
             logger.warning(f"Already connected to {self.endpoint}")
             return
@@ -32,9 +32,15 @@ class ZmqPublisher(IBasePublisher):
         self.socket = self.ctx.socket(zmq.PUB)
 
         try:
-            self.socket.bind(self.endpoint)
-            logger.info("ZMQ Socket bound successfully.")
+            if self.is_client:
+                self.socket.connect(self.endpoint)
+                logger.info(f"ZMQ Socket bound successfully to {self.endpoint}")
+            else:
+                self.socket.bind(self.endpoint)
+                logger.info(f"ZMQ Socket connected successfully to {self.endpoint}")
         except zmq.ZMQError as e:
+
+            self.socket.close() # failed -> self destruction!
             raise ConnectionError(f"Failed to bind to {self.endpoint}: {e}")
 
 

@@ -4,26 +4,37 @@ from abc import ABC, abstractmethod
 from .schemas import SensorMessage
 
 
-class IBasePublisher(ABC):
+logger = logging.getLogger(__name__)
+
+class BasePublisher(ABC):
     """Interface for sending data"""
 
     def __init__(self):
         self._seq_no = 0
 
     def __enter__(self):
-        self.connect()
+        self._connect_impl()
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
-    @abstractmethod
+    
     def connect(self):
-        """connect to another data component"""
+        """
+        [Deprecated] This is for Manual connection. 
+        Please use 'with' statement for automatic resource management.
+        """
+        logger.warning(
+            "⚠️ Direct call to connect() is deprecated. "
+            "Use 'with Publisher(...) as pub:' context manager."
+        )
+        self._connect_impl()
+        
+    @abstractmethod
+    def _connect_impl(self):
+        """Actual connection logic to be implemented by subclasses."""
         pass
-
-
-
 
     def send(self, msg: SensorMessage):
         """Send a validated SensorMessage. Recommended for most use cases.
@@ -59,5 +70,5 @@ class IBasePublisher(ABC):
 
     @abstractmethod
     def close(self):
-        """Closing connection completely. It is closing connection."""
+        """Closing connection completely."""
         pass
