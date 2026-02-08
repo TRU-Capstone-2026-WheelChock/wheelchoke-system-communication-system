@@ -1,0 +1,32 @@
+{
+  "name": "Python 3.12 Poetry Project",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  
+  // Dockerfileで設定したWORKDIRと一致させる
+  "workspaceFolder": "/workspaces/app",
+
+  // ローカルのフォルダをコンテナの /workspaces/app にマウントする
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/app,type=bind",
+
+  // コンテナ起動後に実行するコマンド
+  // ※ vscodeユーザーとして実行されるので、権限がないとここで失敗する
+  "postCreateCommand": "poetry --version",
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/app/.venv/bin/python",
+        "python.terminal.activateEnvInSelectedTerminal": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "njpwerner.autodocstring"
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
