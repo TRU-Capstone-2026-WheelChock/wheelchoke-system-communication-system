@@ -1,14 +1,17 @@
 [tool.poetry]
 name = "msg_handler"
 version = "0.1.0"
-description = ""
+description = "Sensor and Heartbeat message handling with MessageQueue system and Pydantic"
 authors = ["kmiya <miyak19@mytru.ca>"]
+readme = "README.md"
 
+# This is for globally
 [tool.poetry.dependencies]
 python = "^3.10"
 pyzmq = "^27.1.0"
 pydantic = "^2.12.5"
 
+# This is for development & testing
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 black = "^24.1.0"

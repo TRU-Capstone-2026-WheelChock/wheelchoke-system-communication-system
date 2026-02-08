@@ -5,14 +5,10 @@
     "context": ".."
   },
   
-  // Dockerfileで設定したWORKDIRと一致させる
   "workspaceFolder": "/workspaces/app",
-
-  // ローカルのフォルダをコンテナの /workspaces/app にマウントする
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/app,type=bind",
 
-  // コンテナ起動後に実行するコマンド
-  // ※ vscodeユーザーとして実行されるので、権限がないとここで失敗する
+  //Check poetry is working or not
   "postCreateCommand": "poetry --version",
 
   "customizations": {
