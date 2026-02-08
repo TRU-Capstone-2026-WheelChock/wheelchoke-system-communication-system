@@ -1,37 +1,49 @@
-import os
+from typing import Literal, Union
+from pydantic import BaseModel
 from .pub_base import BasePublisher
 from .backends.pub_zmq import ZmqPublisher
 
-from typing import Literal, Union, Unpack
+class ZmqPubOptions(BaseModel):
+    """
+    Configuration options for ZeroMQ publisher.
 
-from pydantic import BaseModel
+    Attributes:
+        backend_type: Fixed literal for ZMQ backend.
+        endpoint: ZMQ connection string.
+        is_connect: If True, uses 'connect'; if False, uses 'bind'.
+    """
+    backend_type: Literal["zmq"] = "zmq"
+    endpoint: str = "tcp://localhost:5555"
+    is_connect: bool = True
 
-class ZmqOptions(BaseModel):
-    backend_type : Literal["zmq"] = "zmq"
-    endpoint : str = "tcp://*:5555"
-    is_client : bool = True
+class MqttPubOptions(BaseModel):
+    """
+    Configuration options for MQTT publisher.
 
-class MqttOptions(BaseModel):
+    Attributes:
+        backend_type: Fixed literal for MQTT backend.
+        broker_url: URL of the MQTT broker.
+        port: Connection port.
+    """
     backend_type: Literal["mqtt"] = "mqtt"
     broker_url: str
-    port: int   
+    port: int
 
-PublisherOptions = Union[ZmqOptions, MqttOptions]
+PublisherOptions = Union[ZmqPubOptions, MqttPubOptions]
 
 def get_publisher(options: PublisherOptions) -> BasePublisher:
     """
-    Factory 
+    Factory method to create a publisher instance.
+
+    Args:
+        options: Configuration object for the chosen backend.
     """
-
-
     if options.backend_type == "zmq":
         return ZmqPublisher(
             endpoint=options.endpoint,
-            is_client=options.is_client
+            is_connect=options.is_connect
         )
-    
-    elif options.backend_type== "mqtt":
+    elif options.backend_type == "mqtt":
         raise NotImplementedError("MQTT backend is not implemented yet.")
-    
     else:
         raise ValueError(f"Unknown backend type: {options.backend_type}")

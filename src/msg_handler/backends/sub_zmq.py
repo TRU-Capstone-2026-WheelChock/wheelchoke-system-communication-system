@@ -4,17 +4,34 @@ from ..sub_base import BaseSubscriber, AsyncBaseSubscriber
 from ..schemas import SensorMessage
 
 class ZmqSubscriber(BaseSubscriber):
-    def __init__(self, endpoint: str):
+    """
+    Synchronous ZeroMQ implementation of a subscriber.
+
+    Attributes:
+        endpoint: ZMQ endpoint string.
+        is_bind: Whether to bind (True) or connect (False).
+        topics: List of topic strings to filter.
+    """
+    def __init__(self, endpoint: str, is_bind=True, topics: list[str] = None):
         self.endpoint = endpoint
+        self.topics = topics or [""]
+        self.is_bind = is_bind
         self.ctx = zmq.Context()
         self.socket = self.ctx.socket(zmq.SUB)
         self._running = True
 
     def connect(self):
-        self.socket.connect(self.endpoint)
-        self.socket.subscribe("") 
+        """Set up ZMQ socket and subscribe to topics."""
+        if self.is_bind:
+            self.socket.bind(self.endpoint)
+        else:
+            self.socket.connect(self.endpoint)
+            
+        for t in self.topics:
+            self.socket.subscribe(t)
 
     def __iter__(self):
+        """Blocking generator that yields parsed SensorMessages."""
         if self.socket.closed:
             self.connect()
             
@@ -29,24 +46,39 @@ class ZmqSubscriber(BaseSubscriber):
                 continue
 
     def close(self):
+        """Stop processing and terminate ZMQ context."""
         self._running = False
         self.socket.close()
         self.ctx.term()
 
-
-# --- (Async) ---
 class AsyncZmqSubscriber(AsyncBaseSubscriber):
-    def __init__(self, endpoint: str):
+    """
+    Asynchronous ZeroMQ implementation of a subscriber.
+
+    Attributes:
+        endpoint: ZMQ endpoint string.
+        is_bind: Whether to bind (True) or connect (False).
+        topics: List of topic strings to filter.
+    """
+    def __init__(self, endpoint: str, is_bind=True, topics: list[str] = None):
         self.endpoint = endpoint
+        self.is_bind = is_bind
+        self.topics = topics or [""]
         self.ctx = zmq.asyncio.Context()
         self.socket = self.ctx.socket(zmq.SUB)
         self._running = True
 
     async def connect(self):
-        self.socket.connect(self.endpoint)
-        self.socket.subscribe("")
+        """Set up async ZMQ socket and subscribe to topics."""
+        if self.is_bind:
+            self.socket.bind(self.endpoint)
+        else:
+            self.socket.connect(self.endpoint)
+        for t in self.topics:
+            self.socket.subscribe(t)
 
     async def __aiter__(self):
+        """Async generator that yields parsed SensorMessages."""
         if self.socket.closed:
             await self.connect()
 
@@ -61,6 +93,7 @@ class AsyncZmqSubscriber(AsyncBaseSubscriber):
                 continue
 
     async def close(self):
+        """Stop processing and terminate ZMQ context asynchronously."""
         self._running = False
         self.socket.close()
         self.ctx.term()
