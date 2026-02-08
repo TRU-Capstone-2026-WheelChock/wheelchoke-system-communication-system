@@ -21,7 +21,8 @@
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "njpwerner.autodocstring"
+        "njpwerner.autodocstring",
+        "github.vscode-github-actions"
       ]
     }
   },
