@@ -3,7 +3,6 @@ import zmq.asyncio
 from ..sub_base import BaseSubscriber, AsyncBaseSubscriber
 from ..schemas import SensorMessage
 
-# --- 同期版 (Sync) ---
 class ZmqSubscriber(BaseSubscriber):
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
@@ -35,7 +34,7 @@ class ZmqSubscriber(BaseSubscriber):
         self.ctx.term()
 
 
-# --- 非同期版 (Async) ---
+# --- (Async) ---
 class AsyncZmqSubscriber(AsyncBaseSubscriber):
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
