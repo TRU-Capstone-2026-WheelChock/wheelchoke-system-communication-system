@@ -2,14 +2,15 @@ from abc import ABC, abstractmethod
 from typing import Iterator, AsyncIterator
 from .schemas import SensorMessage
 
+
 class BaseSubscriber(ABC):
     """
     Abstract base class for synchronous subscribers.
-    
+
     Note:
         Implements the context manager protocol to ensure connection cleanup.
     """
-    
+
     def __enter__(self):
         self.connect()
         return self
@@ -31,6 +32,7 @@ class BaseSubscriber(ABC):
     def close(self):
         """Close the connection and release resources."""
         pass
+
 
 class AsyncBaseSubscriber(ABC):
     """

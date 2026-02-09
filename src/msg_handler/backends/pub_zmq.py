@@ -5,6 +5,7 @@ from ..schemas import SensorMessage
 
 logger = logging.getLogger(__name__)
 
+
 class ZmqPublisher(BasePublisher):
     """
     ZeroMQ implementation of a publisher.
@@ -26,7 +27,7 @@ class ZmqPublisher(BasePublisher):
         if self.socket:
             logger.warning(f"Already connected to {self.endpoint}")
             return
-        
+
         logger.info(f"Connecting to ZMQ endpoint: {self.endpoint}")
         self.ctx = zmq.Context()
         self.socket = self.ctx.socket(zmq.PUB)

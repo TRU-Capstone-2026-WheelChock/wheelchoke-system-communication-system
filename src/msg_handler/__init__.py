@@ -1,6 +1,6 @@
 # src/msg_handler/__init__.py
 
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
 # 1. Publishers
 from .pub_base import BasePublisher
@@ -15,12 +15,9 @@ from .schemas import SensorMessage
 __all__ = [
     "SensorMessage",
     "ZmqPubOptions",
-    "ZmqSubOptions", 
-
-
-    "get_publisher", 
-    "get_subscriber", 
+    "ZmqSubOptions",
+    "get_publisher",
+    "get_subscriber",
     "get_async_subscriber",
-    
     "BasePublisher",
 ]

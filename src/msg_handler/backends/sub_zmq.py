@@ -3,6 +3,7 @@ import zmq.asyncio
 from ..sub_base import BaseSubscriber, AsyncBaseSubscriber
 from ..schemas import SensorMessage
 
+
 class ZmqSubscriber(BaseSubscriber):
     """
     Synchronous ZeroMQ implementation of a subscriber.
@@ -12,7 +13,8 @@ class ZmqSubscriber(BaseSubscriber):
         is_bind: Whether to bind (True) or connect (False).
         topics: List of topic strings to filter.
     """
-    def __init__(self, endpoint: str, is_bind=True, topics: list[str] = None):
+
+    def __init__(self, endpoint: str, is_bind=True, topics: list[str] | None = None):
         self.endpoint = endpoint
         self.topics = topics or [""]
         self.is_bind = is_bind
@@ -26,7 +28,7 @@ class ZmqSubscriber(BaseSubscriber):
             self.socket.bind(self.endpoint)
         else:
             self.socket.connect(self.endpoint)
-            
+
         for t in self.topics:
             self.socket.subscribe(t)
 
@@ -34,7 +36,7 @@ class ZmqSubscriber(BaseSubscriber):
         """Blocking generator that yields parsed SensorMessages."""
         if self.socket.closed:
             self.connect()
-            
+
         while self._running:
             try:
                 json_str = self.socket.recv_string()
@@ -51,6 +53,7 @@ class ZmqSubscriber(BaseSubscriber):
         self.socket.close()
         self.ctx.term()
 
+
 class AsyncZmqSubscriber(AsyncBaseSubscriber):
     """
     Asynchronous ZeroMQ implementation of a subscriber.
@@ -60,7 +63,8 @@ class AsyncZmqSubscriber(AsyncBaseSubscriber):
         is_bind: Whether to bind (True) or connect (False).
         topics: List of topic strings to filter.
     """
-    def __init__(self, endpoint: str, is_bind=True, topics: list[str] = None):
+
+    def __init__(self, endpoint: str, is_bind=True, topics: list[str] | None = None):
         self.endpoint = endpoint
         self.is_bind = is_bind
         self.topics = topics or [""]

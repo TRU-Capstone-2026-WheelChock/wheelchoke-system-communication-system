@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from .pub_base import BasePublisher
 from .backends.pub_zmq import ZmqPublisher
 
+
 class ZmqPubOptions(BaseModel):
     """
     Configuration options for ZeroMQ publisher.
@@ -12,9 +13,11 @@ class ZmqPubOptions(BaseModel):
         endpoint: ZMQ connection string.
         is_connect: If True, uses 'connect'; if False, uses 'bind'.
     """
+
     backend_type: Literal["zmq"] = "zmq"
     endpoint: str = "tcp://localhost:5555"
     is_connect: bool = True
+
 
 class MqttPubOptions(BaseModel):
     """
@@ -25,11 +28,14 @@ class MqttPubOptions(BaseModel):
         broker_url: URL of the MQTT broker.
         port: Connection port.
     """
+
     backend_type: Literal["mqtt"] = "mqtt"
     broker_url: str
     port: int
 
+
 PublisherOptions = Union[ZmqPubOptions, MqttPubOptions]
+
 
 def get_publisher(options: PublisherOptions) -> BasePublisher:
     """
@@ -39,10 +45,7 @@ def get_publisher(options: PublisherOptions) -> BasePublisher:
         options: Configuration object for the chosen backend.
     """
     if options.backend_type == "zmq":
-        return ZmqPublisher(
-            endpoint=options.endpoint,
-            is_connect=options.is_connect
-        )
+        return ZmqPublisher(endpoint=options.endpoint, is_connect=options.is_connect)
     elif options.backend_type == "mqtt":
         raise NotImplementedError("MQTT backend is not implemented yet.")
     else:

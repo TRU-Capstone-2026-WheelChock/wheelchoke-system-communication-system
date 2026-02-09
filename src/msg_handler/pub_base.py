@@ -6,6 +6,7 @@ from .schemas import SensorMessage
 
 logger = logging.getLogger(__name__)
 
+
 class BasePublisher(ABC):
     """Interface for sending data"""
 
@@ -15,14 +16,13 @@ class BasePublisher(ABC):
     def __enter__(self):
         self._connect_impl()
         return self
-    
+
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
-    
     def connect(self):
         """
-        [Deprecated] This is for Manual connection. 
+        [Deprecated] This is for Manual connection.
         Please use 'with' statement for automatic resource management.
         """
         logger.warning(
@@ -30,7 +30,7 @@ class BasePublisher(ABC):
             "Use 'with Publisher(...) as pub:' context manager."
         )
         self._connect_impl()
-        
+
     @abstractmethod
     def _connect_impl(self):
         """Actual connection logic to be implemented by subclasses."""
@@ -52,10 +52,10 @@ class BasePublisher(ABC):
         except Exception as e:
             logger.error(f"Failed to publish message: {e}")
             raise
-    
+
     @abstractmethod
     def send_raw(self, data: str):
-        """Send a raw string directly. Useful for testing, debugging, or 
+        """Send a raw string directly. Useful for testing, debugging, or
             sending custom payloads that don't follow the standard schema.
 
         Args:
@@ -65,8 +65,6 @@ class BasePublisher(ABC):
             This is for testing purpose. Notify to team member if you use this for actual code.
         """
         pass
-
-
 
     @abstractmethod
     def close(self):

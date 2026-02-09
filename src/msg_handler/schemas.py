@@ -13,10 +13,12 @@ class SensorPayload(BaseModel):
         sensor_status: Operational status string.
         sensor_status_code: Numeric status code.
     """
-    isThereHuman : bool
-    sensor_status : str
-    sensor_status_code : int
+
+    isThereHuman: bool
+    sensor_status: str
+    sensor_status_code: int
     # uptime : timedelta
+
 
 class HeartBeatPayload(BaseModel):
     """
@@ -26,11 +28,14 @@ class HeartBeatPayload(BaseModel):
         status: Device health status (e.g., 'Active').
         status_code: Numeric health code.
     """
-    status : str
-    status_code : int
+
+    status: str
+    status_code: int
     # uptime : timedelta
 
+
 T = TypeVar("T", SensorPayload, HeartBeatPayload)
+
 
 class SensorMessage(BaseModel, Generic[T]):
     """
@@ -46,13 +51,14 @@ class SensorMessage(BaseModel, Generic[T]):
     Note:
         When serialized to JSON, `timestamp` is formatted as 'YYYY-MM-DD HH:MM'.
     """
+
     sender_id: str
-    sender_name : str | None
+    sender_name: str | None
     timestamp: datetime = Field(default_factory=datetime.now)
     data_type: str
     payload: T
-    sequence_no : int = 0
+    sequence_no: int = 0
 
-    @field_serializer('timestamp')
+    @field_serializer("timestamp")
     def serialize_timestamp(self, dt: datetime, _info):
-        return dt.strftime('%Y-%m-%d %H:%M')
+        return dt.strftime("%Y-%m-%d %H:%M")
