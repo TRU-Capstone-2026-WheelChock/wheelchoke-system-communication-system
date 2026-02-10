@@ -10,6 +10,7 @@ from msg_handler import (
     ZmqPubOptions,
     ZmqSubOptions,
     SensorMessage,
+    SensorPayload,
 )
 
 
@@ -20,15 +21,26 @@ def create_valid_message(sender_id: str) -> SensorMessage:
     Attributes:
         sender_id: Unique identifier for the sending entity.
     """
+    # just to display you can do this as well. (will be a problem if you do this)
+    # return SensorMessage(
+    #     sender_id=sender_id,
+    #     sender_name="Tester",
+    #     data_type="test",
+    #     payload={
+    #         "isThereHuman": False,
+    #         "sensor_status": "active",
+    #         "sensor_status_code": 200,
+    #     },
+    # )
     return SensorMessage(
         sender_id=sender_id,
         sender_name="Tester",
         data_type="test",
-        payload={
-            "isThereHuman": False,
-            "sensor_status": "active",
-            "sensor_status_code": 200,
-        },
+        payload=SensorPayload(
+            isThereHuman=False,
+            sensor_status="active",
+            sensor_status_code=200,
+        ),
     )
 
 
@@ -77,6 +89,9 @@ def test_zmq_pub_sub_sync():
     sub_thread.join(timeout=3.0)
 
     assert len(received_msgs) == 1
+    assert isinstance(
+        received_msgs[0], SensorMessage
+    ), "it is not SensorMessage instance"
     assert received_msgs[0].payload.sensor_status == "active"
 
 

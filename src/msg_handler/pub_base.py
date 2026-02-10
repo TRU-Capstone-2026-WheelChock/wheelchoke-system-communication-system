@@ -3,7 +3,6 @@ import logging
 from abc import ABC, abstractmethod
 from .schemas import SensorMessage
 
-
 logger = logging.getLogger(__name__)
 
 
