@@ -3,6 +3,12 @@ from pydantic import BaseModel, Field, field_serializer
 from typing import Any, Generic, TypeVar, Optional
 from datetime import datetime, timedelta
 
+"""
+Payload definitions.
+Note: Pydantic parses Union types by field matching (first match wins). 
+BE CAREFUL WITH FIELD OVERLAPS! Consider using 'Discriminator' if payload types increase.
+"""
+
 
 class SensorPayload(BaseModel):
     """
@@ -34,10 +40,7 @@ class HeartBeatPayload(BaseModel):
     # uptime : timedelta
 
 
-T = TypeVar("T", SensorPayload, HeartBeatPayload)
-
-
-class SensorMessage(BaseModel, Generic[T]):
+class SensorMessage(BaseModel):
     """
     Generic envelope for sensor telemetry.
 
@@ -49,14 +52,17 @@ class SensorMessage(BaseModel, Generic[T]):
         payload: The actual data content (SensorPayload or HeartBeatPayload).
 
     Note:
-        When serialized to JSON, `timestamp` is formatted as 'YYYY-MM-DD HH:MM'.
+        - When serialized to JSON, `timestamp` is formatted as 'YYYY-MM-DD HH:MM'.
+        - [Important] The `payload` is validated against classes in T (first match wins).
+          Ensure that the dictionary keys do not overlap significantly
+          between these types to avoid incorrect type inference.
     """
 
     sender_id: str
     sender_name: str | None
     timestamp: datetime = Field(default_factory=datetime.now)
     data_type: str
-    payload: T
+    payload: SensorPayload | HeartBeatPayload
     sequence_no: int = 0
 
     @field_serializer("timestamp")

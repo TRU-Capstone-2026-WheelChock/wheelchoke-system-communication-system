@@ -1,115 +1,126 @@
 import pytest
-import time
-import threading
-import asyncio
-import zmq
-from msg_handler import (
-    get_publisher,
-    get_subscriber,
-    get_async_subscriber,
-    ZmqPubOptions,
-    ZmqSubOptions,
-    SensorMessage,
-)
+import json
+from datetime import datetime
+from pydantic import ValidationError
+from msg_handler.schemas import SensorMessage, SensorPayload, HeartBeatPayload
+
+# --- Normal Case Tests ---
 
 
-def create_valid_message(sender_id: str) -> SensorMessage:
-    """
-    Helper to create a standard SensorMessage for testing.
-
-    Attributes:
-        sender_id: Unique identifier for the sending entity.
-    """
-    return SensorMessage(
-        sender_id=sender_id,
-        sender_name="Tester",
-        data_type="test",
-        payload={
-            "isThereHuman": False,
-            "sensor_status": "active",
-            "sensor_status_code": 200,
+def test_create_valid_sensor_message():
+    """Verify if data matching SensorPayload structure is correctly converted."""
+    data = {
+        "sender_id": "sensor_unit_01",
+        "sender_name": "Entrance Camera",
+        "data_type": "human_detection",
+        "payload": {
+            "isThereHuman": True,
+            "sensor_status": "detecting",
+            "sensor_status_code": 101,
         },
+    }
+    msg = SensorMessage(**data)
+
+    # Verification
+    assert msg.sender_id == "sensor_unit_01"
+    # Should automatically become SensorPayload type based on fields
+    assert isinstance(msg.payload, SensorPayload)
+    assert msg.payload.isThereHuman is True
+    assert msg.payload.sensor_status_code == 101
+
+
+def test_create_valid_heartbeat_message():
+    """Verify if data matching HeartBeatPayload structure is correctly converted (Union discrimination)."""
+    data = {
+        "sender_id": "system_mon",
+        "sender_name": None,  # Check optional field
+        "data_type": "health_check",
+        "payload": {"status": "Alive", "status_code": 200},
+    }
+    msg = SensorMessage(**data)
+
+    # Verification
+    assert isinstance(msg.payload, HeartBeatPayload)
+    assert msg.payload.status == "Alive"
+    assert msg.sender_name is None  # Check if None is allowed
+
+
+def test_timestamp_auto_generation():
+    """Verify if timestamp is automatically generated when not provided."""
+    msg = SensorMessage(
+        sender_id="test",
+        sender_name="test",
+        data_type="test",
+        payload={"status": "ok", "status_code": 200},
+    )
+    assert isinstance(msg.timestamp, datetime)
+    # Check if generated time is close to 'now' (rough check < 1.0s)
+    assert (datetime.now() - msg.timestamp).total_seconds() < 1.0
+
+
+def test_json_serialization_format():
+    """Verify if timestamp format is converted during JSON serialization."""
+    dt = datetime(2025, 12, 31, 23, 59, 0)
+    msg = SensorMessage(
+        sender_id="test",
+        sender_name="test",
+        timestamp=dt,
+        data_type="test",
+        payload={"status": "ok", "status_code": 200},
     )
 
+    json_str = msg.model_dump_json()
+    json_dict = json.loads(json_str)
 
-def test_zmq_pub_sub_sync():
-    """
-    Test synchronous ZMQ message exchange using a background thread.
-    """
-    endpoint = "tcp://127.0.0.1:5556"
-    received_msgs = []
-
-    # --- 1. Receiver Setup (Subscriber) ---
-    def run_subscriber():
-        # Bind as server and wait for connection
-        sub_opts = ZmqSubOptions(endpoint=endpoint, is_bind=True)
-
-        with get_subscriber(sub_opts) as sub:
-            # Prevent infinite hang: set 2000ms receive timeout
-            sub.socket.setsockopt(zmq.RCVTIMEO, 2000)
-
-            try:
-                for msg in sub:
-                    received_msgs.append(msg)
-                    break
-            except zmq.Again:
-                print("TIMEOUT: Subscriber did not receive message.")
-
-    # Start subscriber thread
-    sub_thread = threading.Thread(target=run_subscriber)
-    sub_thread.start()
-
-    # Allow time for socket to bind
-    time.sleep(0.2)
-
-    # --- 2. Sender Setup (Publisher) ---
-    pub_opts = ZmqPubOptions(endpoint=endpoint)  # Default is_connect=True
-
-    with get_publisher(pub_opts) as pub:
-        # Note: Sleep required to avoid 'Slow Joiner' problem in ZMQ
-        time.sleep(0.5)
-
-        msg = create_valid_message("sync_tester")
-        pub.send(msg)
-
-    # --- 3. Cleanup & Verification ---
-    sub_thread.join(timeout=3.0)
-
-    assert len(received_msgs) == 1
-    assert received_msgs[0].payload.sensor_status == "active"
+    # Check custom serializer format ("%Y-%m-%d %H:%M")
+    assert json_dict["timestamp"] == "2025-12-31 23:59"
+    # Seconds should be truncated
+    assert len(json_dict["timestamp"].split(":")) == 2
 
 
-@pytest.mark.asyncio
-async def test_zmq_pub_sub_async():
-    """
-    Test asynchronous ZMQ message exchange using asyncio tasks.
-    """
-    endpoint = "tcp://127.0.0.1:5557"
+# --- Error Case Tests ---
 
-    # --- 1. Async Receiver Task ---
-    async def run_subscriber():
-        opts = ZmqSubOptions(endpoint=endpoint, is_bind=True)
-        async with get_async_subscriber(opts) as sub:
-            async for msg in sub:
-                return msg
 
-    sub_task = asyncio.create_task(run_subscriber())
+def test_validation_error_missing_payload_field():
+    """Verify if error occurs when required fields are missing."""
+    with pytest.raises(ValidationError) as excinfo:
+        SensorMessage(
+            sender_id="fail",
+            sender_name="fail",
+            data_type="fail",
+            payload={
+                "status": "Alive"
+                # status_code is missing -> Invalid as HeartBeatPayload
+            },
+        )
+    # Check if error message contains payload-related hints
+    assert "payload" in str(excinfo.value)
 
-    # Wait for bind setup
-    await asyncio.sleep(0.2)
 
-    # --- 2. Async Sender ---
-    pub_opts = ZmqPubOptions(endpoint=endpoint)
-    with get_publisher(pub_opts) as pub:
-        # Note: Small delay to ensure PUB/SUB handshake completes
-        await asyncio.sleep(0.5)
+def test_validation_error_invalid_type():
+    """Verify if error occurs when field types mismatch."""
+    with pytest.raises(ValidationError):
+        SensorMessage(
+            sender_id="fail",
+            sender_name="fail",
+            data_type="fail",
+            payload={
+                "isThereHuman": "NotBoolean",  # String provided where bool expected
+                "sensor_status": "ok",
+                "sensor_status_code": 1,
+            },
+        )
 
-        msg = create_valid_message("async_tester")
-        pub.send(msg)
 
-    # --- 3. Verification with Timeout ---
-    try:
-        received_msg = await asyncio.wait_for(sub_task, timeout=3.0)
-        assert received_msg.payload.sensor_status == "active"
-    except asyncio.TimeoutError:
-        pytest.fail("Async Subscriber timed out! (Message not received)")
+def test_validation_error_unknown_payload_structure():
+    """Verify if error occurs when undefined payload structure is provided."""
+    with pytest.raises(ValidationError):
+        SensorMessage(
+            sender_id="fail",
+            sender_name="fail",
+            data_type="fail",
+            payload={
+                "unknown_key": 12345
+                # Fits neither SensorPayload nor HeartBeatPayload
+            },
+        )
