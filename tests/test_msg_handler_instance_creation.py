@@ -27,7 +27,32 @@ def test_create_valid_sensor_message():
     assert isinstance(msg.payload, SensorPayload)
     assert msg.payload.isThereHuman is True
     assert msg.payload.sensor_status_code == 101
+    assert msg.payload.human_exist_possibility == None
 
+
+def test_create_valid_sensor_message_human_possibility():
+    """Verify if data matching SensorPayload structure is correctly converted."""
+    data = {
+        "sender_id": "sensor_unit_01",
+        "sender_name": "Entrance Camera",
+        "data_type": "human_detection",
+        "payload": {
+            "isThereHuman": True,
+            "sensor_status": "detecting",
+            "sensor_status_code": 101,
+            "human_exist_possibility" : 25.25
+
+        },
+    }
+    msg = SensorMessage(**data)
+
+    # Verification
+    assert msg.sender_id == "sensor_unit_01"
+    # Should automatically become SensorPayload type based on fields
+    assert isinstance(msg.payload, SensorPayload)
+    assert msg.payload.isThereHuman is True
+    assert msg.payload.sensor_status_code == 101
+    assert msg.payload.human_exist_possibility == 25.25
 
 def test_create_valid_heartbeat_message():
     """Verify if data matching HeartBeatPayload structure is correctly converted (Union discrimination)."""

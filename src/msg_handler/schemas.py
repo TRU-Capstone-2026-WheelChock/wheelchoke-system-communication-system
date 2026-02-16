@@ -1,6 +1,5 @@
 # src/msg_handler/schemas.py
 from pydantic import BaseModel, Field, field_serializer
-from typing import Any, Generic, TypeVar, Optional
 from datetime import datetime, timedelta
 
 """
@@ -16,11 +15,13 @@ class SensorPayload(BaseModel):
 
     Attributes:
         isThereHuman: True if a human is detected.
+        human_exist_possibility: possibility of human existence; not available then None. or max 100.0
         sensor_status: Operational status string.
         sensor_status_code: Numeric status code.
     """
 
     isThereHuman: bool
+    human_exist_possibility: float | None = Field(default=None, ge=0.0, le=100.0)
     sensor_status: str
     sensor_status_code: int
     # uptime : timedelta
