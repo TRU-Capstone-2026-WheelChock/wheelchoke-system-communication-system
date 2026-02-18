@@ -28,6 +28,7 @@ def test_create_valid_sensor_message():
     assert msg.payload.isThereHuman is True
     assert msg.payload.sensor_status_code == 101
     assert msg.payload.human_exist_possibility == None
+    assert msg.get_status() == (101, "detecting")
 
 
 def test_create_valid_sensor_message_human_possibility():
@@ -53,6 +54,7 @@ def test_create_valid_sensor_message_human_possibility():
     assert msg.payload.isThereHuman is True
     assert msg.payload.sensor_status_code == 101
     assert msg.payload.human_exist_possibility == 25.25
+    assert msg.get_status() == (101, "detecting")
 
 def test_create_valid_heartbeat_message():
     """Verify if data matching HeartBeatPayload structure is correctly converted (Union discrimination)."""
@@ -68,6 +70,7 @@ def test_create_valid_heartbeat_message():
     assert isinstance(msg.payload, HeartBeatPayload)
     assert msg.payload.status == "Alive"
     assert msg.sender_name is None  # Check if None is allowed
+    assert msg.get_status() == (200, "Alive")
 
 
 def test_timestamp_auto_generation():
