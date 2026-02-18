@@ -69,3 +69,17 @@ class SensorMessage(BaseModel):
     @field_serializer("timestamp")
     def serialize_timestamp(self, dt: datetime, _info):
         return dt.strftime("%Y-%m-%d %H:%M")
+    
+    def get_status(self):
+        """get status
+
+        Returns:
+            tuple[int, str]: status_code, status(str)
+        """
+        if isinstance(self.payload, SensorPayload):
+            return self.payload.sensor_status_code, self.payload.sensor_status
+        if isinstance(self.payload, HeartBeatPayload):
+            return self.payload.status_code, self.payload.status
+        
+        raise NotImplementedError(f"{type(self.payload)} does not expected to have status")
+
