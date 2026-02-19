@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "msg_handler"
-version = "0.2.0"
+version = "0.2.2"
 description = "Sensor and Heartbeat message handling with MessageQueue system and Pydantic"
 authors = ["kmiya <miyak19@mytru.ca>"]
 readme = "README.md"
+include = ["src/msg_handler/py.typed"]
 
 # This is for globally
 [tool.poetry.dependencies]
