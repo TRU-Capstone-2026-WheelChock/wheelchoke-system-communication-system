@@ -1,7 +1,17 @@
 import pytest
 import json
 from datetime import datetime
+import zmq
+import zmq.asyncio
 from pydantic import ValidationError
+from msg_handler import (
+    get_publisher,
+    get_async_publisher,
+    get_subscriber,
+    get_async_subscriber,
+    ZmqPubOptions,
+    ZmqSubOptions,
+)
 from msg_handler.schemas import (
     SensorMessage,
     SensorPayload,
@@ -186,3 +196,63 @@ def test_parse_motor_message_with_expected_type():
     )
     parsed = parse_message_json(json_str, expected_type="motor")
     assert isinstance(parsed, MotorMessage)
+
+
+def test_get_publisher_rejects_async_context():
+    async_ctx = zmq.asyncio.Context()
+    try:
+        with pytest.raises(TypeError, match="must be zmq.Context for sync publisher"):
+            get_publisher(
+                ZmqPubOptions(
+                    endpoint="tcp://127.0.0.1:6001",
+                    context=async_ctx,
+                )
+            )
+    finally:
+        async_ctx.term()
+
+
+def test_get_async_publisher_rejects_sync_context():
+    sync_ctx = zmq.Context()
+    try:
+        with pytest.raises(
+            TypeError, match="must be zmq.asyncio.Context for async publisher"
+        ):
+            get_async_publisher(
+                ZmqPubOptions(
+                    endpoint="tcp://127.0.0.1:6002",
+                    context=sync_ctx,
+                )
+            )
+    finally:
+        sync_ctx.term()
+
+
+def test_get_subscriber_rejects_async_context():
+    async_ctx = zmq.asyncio.Context()
+    try:
+        with pytest.raises(TypeError, match="must be zmq.Context for sync subscriber"):
+            get_subscriber(
+                ZmqSubOptions(
+                    endpoint="tcp://127.0.0.1:6003",
+                    context=async_ctx,
+                )
+            )
+    finally:
+        async_ctx.term()
+
+
+def test_get_async_subscriber_rejects_sync_context():
+    sync_ctx = zmq.Context()
+    try:
+        with pytest.raises(
+            TypeError, match="must be zmq.asyncio.Context for async subscriber"
+        ):
+            get_async_subscriber(
+                ZmqSubOptions(
+                    endpoint="tcp://127.0.0.1:6004",
+                    context=sync_ctx,
+                )
+            )
+    finally:
+        sync_ctx.term()

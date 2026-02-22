@@ -2,7 +2,7 @@ import os
 from typing import Literal, Union, List
 import zmq
 import zmq.asyncio
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from .sub_base import BaseSubscriber, AsyncBaseSubscriber
 from .backends.sub_zmq import ZmqSubscriber, AsyncZmqSubscriber
 from .schemas import ExpectedMessageType
@@ -24,6 +24,7 @@ class ZmqSubOptions(BaseModel):
     Note:
         'bind' for permanent infrastructure (start these first); 'connect' for temporary or secondary components.
     """
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     backend_type: Literal["zmq"] = "zmq"
     endpoint: str = "tcp://localhost:5555"
@@ -31,6 +32,7 @@ class ZmqSubOptions(BaseModel):
     is_bind: bool = True
     expected_type: ExpectedMessageType = "auto"
     hwm: int = 1000
+    context: zmq.Context |zmq.asyncio.Context| None = None
 
 
 class MqttSubOptions(BaseModel):
@@ -54,8 +56,7 @@ SubscriberOptions = Union[ZmqSubOptions, MqttSubOptions]
 
 
 def get_subscriber(
-    options: SubscriberOptions,
-    context: zmq.Context | None = None
+    options: SubscriberOptions
 ) -> BaseSubscriber:
     """
     Factory method to create a synchronous subscriber.
@@ -67,12 +68,22 @@ def get_subscriber(
             `options.hwm` is applied as SUB receive high water mark.
     """
     if options.backend_type == "zmq":
+        context = options.context
+        if context is None:
+            sync_context = None
+        elif isinstance(context, zmq.asyncio.Context):
+            raise TypeError(
+                "ZmqSubOptions.context must be zmq.Context for sync subscriber."
+            )
+        else:
+            sync_context = context
+
         return ZmqSubscriber(
             endpoint=options.endpoint,
             topics=options.topics,
             is_bind=options.is_bind,
             expected_type=options.expected_type,
-            context=context,
+            context=sync_context,
             hwm=options.hwm,
         )
     elif options.backend_type == "mqtt":
@@ -82,8 +93,7 @@ def get_subscriber(
 
 
 def get_async_subscriber(
-    options: SubscriberOptions,
-    context: zmq.asyncio.Context | None = None
+    options: SubscriberOptions
 ) -> AsyncBaseSubscriber:
     """
     Factory method to create an asynchronous subscriber.
@@ -95,12 +105,22 @@ def get_async_subscriber(
             `options.hwm` is applied as SUB receive high water mark.
     """
     if options.backend_type == "zmq":
+        context = options.context
+        if context is None:
+            async_context = None
+        elif isinstance(context, zmq.asyncio.Context):
+            async_context = context
+        else:
+            raise TypeError(
+                "ZmqSubOptions.context must be zmq.asyncio.Context for async subscriber."
+            )
+
         return AsyncZmqSubscriber(
             endpoint=options.endpoint,
             topics=options.topics,
             is_bind=options.is_bind,
             expected_type=options.expected_type,
-            context=context,
+            context=async_context,
             hwm=options.hwm,
         )
     elif options.backend_type == "mqtt":
