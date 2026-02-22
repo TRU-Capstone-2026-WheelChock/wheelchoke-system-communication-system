@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, AsyncIterator
-from .schemas import SensorMessage
+from .schemas import SupportedMessage
 
 
 class BaseSubscriber(ABC):
@@ -24,7 +24,7 @@ class BaseSubscriber(ABC):
         pass
 
     @abstractmethod
-    def __iter__(self) -> Iterator[SensorMessage]:
+    def __iter__(self) -> Iterator[SupportedMessage]:
         """Iterate over received messages."""
         pass
 
@@ -52,7 +52,7 @@ class AsyncBaseSubscriber(ABC):
         pass
 
     @abstractmethod
-    def __aiter__(self) -> AsyncIterator[SensorMessage]:
+    def __aiter__(self) -> AsyncIterator[SupportedMessage]:
         """Iterate over received messages using async for."""
         pass
 

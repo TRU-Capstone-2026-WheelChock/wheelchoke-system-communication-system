@@ -3,6 +3,7 @@ from typing import Literal, Union, List
 from pydantic import BaseModel, Field
 from .sub_base import BaseSubscriber, AsyncBaseSubscriber
 from .backends.sub_zmq import ZmqSubscriber, AsyncZmqSubscriber
+from .schemas import ExpectedMessageType
 
 BACKEND_TYPE = os.getenv("MSG_BACKEND", "zmq")
 
@@ -16,12 +17,14 @@ class ZmqSubOptions(BaseModel):
         endpoint: ZMQ connection string (e.g., tcp://localhost:5555).
         topics: List of topics to subscribe to.
         is_bind: Whether to bind or connect to the endpoint.
+        expected_type: Expected message kind to parse ("auto" | "sensor" | "display" | "motor").
     """
 
     backend_type: Literal["zmq"] = "zmq"
     endpoint: str = "tcp://localhost:5555"
     topics: List[str] = Field(default_factory=lambda: [""])
     is_bind: bool = True
+    expected_type: ExpectedMessageType = "auto"
 
 
 class MqttSubOptions(BaseModel):
@@ -53,7 +56,10 @@ def get_subscriber(options: SubscriberOptions) -> BaseSubscriber:
     """
     if options.backend_type == "zmq":
         return ZmqSubscriber(
-            endpoint=options.endpoint, topics=options.topics, is_bind=options.is_bind
+            endpoint=options.endpoint,
+            topics=options.topics,
+            is_bind=options.is_bind,
+            expected_type=options.expected_type,
         )
     elif options.backend_type == "mqtt":
         raise NotImplementedError("MQTT backend is not implemented yet.")
@@ -70,7 +76,10 @@ def get_async_subscriber(options: SubscriberOptions) -> AsyncBaseSubscriber:
     """
     if options.backend_type == "zmq":
         return AsyncZmqSubscriber(
-            endpoint=options.endpoint, topics=options.topics, is_bind=options.is_bind
+            endpoint=options.endpoint,
+            topics=options.topics,
+            is_bind=options.is_bind,
+            expected_type=options.expected_type,
         )
     elif options.backend_type == "mqtt":
         raise NotImplementedError("MQTT backend is not implemented yet.")

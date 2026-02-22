@@ -1,7 +1,7 @@
 # src/msg_handler/base.py
 import logging
 from abc import ABC, abstractmethod
-from .schemas import SensorMessage
+from .schemas import SupportedMessage
 
 logger = logging.getLogger(__name__)
 
@@ -35,19 +35,23 @@ class BasePublisher(ABC):
         """Actual connection logic to be implemented by subclasses."""
         pass
 
-    def send(self, msg: SensorMessage):
-        """Send a validated SensorMessage. Recommended for most use cases.
+    def send(self, msg: SupportedMessage):
+        """Send a validated supported message. Recommended for most use cases.
 
         Args:
-            msg (SensorMessage): The validated message object to be sent.
+            msg (SupportedMessage): The validated message object to be sent.
         """
         try:
-            msg.sequence_no = self._seq_no
-            self._seq_no += 1
-            logger.debug(f"Publishing msg {msg.sequence_no} (type: {msg.data_type})")
+            if hasattr(msg, "sequence_no"):
+                setattr(msg, "sequence_no", self._seq_no)
+            
+            msg_type = getattr(msg, "data_type", msg.__class__.__name__)
+            msg_seq = getattr(msg, "sequence_no", "N/A")
+            logger.debug(f"Publishing msg {msg_seq} (type: {msg_type})")
             logger.debug(f"content is {msg.model_dump_json()}")
 
             self.send_raw(msg.model_dump_json())
+            self._seq_no += 1
         except Exception as e:
             logger.error(f"Failed to publish message: {e}")
             raise

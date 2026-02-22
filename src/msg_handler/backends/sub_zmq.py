@@ -1,7 +1,7 @@
 import zmq
 import zmq.asyncio
 from ..sub_base import BaseSubscriber, AsyncBaseSubscriber
-from ..schemas import SensorMessage
+from ..schemas import ExpectedMessageType, parse_message_json
 
 
 class ZmqSubscriber(BaseSubscriber):
@@ -12,12 +12,20 @@ class ZmqSubscriber(BaseSubscriber):
         endpoint: ZMQ endpoint string.
         is_bind: Whether to bind (True) or connect (False).
         topics: List of topic strings to filter.
+        expected_type: Expected message kind for parsing.
     """
 
-    def __init__(self, endpoint: str, is_bind=True, topics: list[str] | None = None):
+    def __init__(
+        self,
+        endpoint: str,
+        is_bind=True,
+        topics: list[str] | None = None,
+        expected_type: ExpectedMessageType = "auto",
+    ):
         self.endpoint = endpoint
         self.topics = topics or [""]
         self.is_bind = is_bind
+        self.expected_type = expected_type
         self.ctx = zmq.Context()
         self.socket = self.ctx.socket(zmq.SUB)
         self._running = True
@@ -33,14 +41,14 @@ class ZmqSubscriber(BaseSubscriber):
             self.socket.subscribe(t)
 
     def __iter__(self):
-        """Blocking generator that yields parsed SensorMessages."""
+        """Blocking generator that yields parsed messages by expected_type."""
         if self.socket.closed:
             self.connect()
 
         while self._running:
             try:
                 json_str = self.socket.recv_string()
-                yield SensorMessage.model_validate_json(json_str)
+                yield parse_message_json(json_str, expected_type=self.expected_type)
             except zmq.ZMQError:
                 break
             except Exception as e:
@@ -62,12 +70,20 @@ class AsyncZmqSubscriber(AsyncBaseSubscriber):
         endpoint: ZMQ endpoint string.
         is_bind: Whether to bind (True) or connect (False).
         topics: List of topic strings to filter.
+        expected_type: Expected message kind for parsing.
     """
 
-    def __init__(self, endpoint: str, is_bind=True, topics: list[str] | None = None):
+    def __init__(
+        self,
+        endpoint: str,
+        is_bind=True,
+        topics: list[str] | None = None,
+        expected_type: ExpectedMessageType = "auto",
+    ):
         self.endpoint = endpoint
         self.is_bind = is_bind
         self.topics = topics or [""]
+        self.expected_type = expected_type
         self.ctx = zmq.asyncio.Context()
         self.socket = self.ctx.socket(zmq.SUB)
         self._running = True
@@ -82,14 +98,14 @@ class AsyncZmqSubscriber(AsyncBaseSubscriber):
             self.socket.subscribe(t)
 
     async def __aiter__(self):
-        """Async generator that yields parsed SensorMessages."""
+        """Async generator that yields parsed messages by expected_type."""
         if self.socket.closed:
             await self.connect()
 
         while self._running:
             try:
                 json_str = await self.socket.recv_string()
-                yield SensorMessage.model_validate_json(json_str)
+                yield parse_message_json(json_str, expected_type=self.expected_type)
             except zmq.ZMQError:
                 break
             except Exception as e:

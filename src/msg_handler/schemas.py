@@ -1,6 +1,6 @@
 # src/msg_handler/schemas.py
 from datetime import datetime
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, Field, TypeAdapter, field_serializer
 
@@ -112,9 +112,25 @@ class MotorMessage(BaseModel):
 
 
 SupportedMessage: TypeAlias = SensorMessage | DisplayMessage | MotorMessage
+ExpectedMessageType: TypeAlias = Literal["auto", "sensor", "display", "motor"]
+
 _supported_message_adapter = TypeAdapter(SupportedMessage)
+_sensor_message_adapter = TypeAdapter(SensorMessage)
+_display_message_adapter = TypeAdapter(DisplayMessage)
+_motor_message_adapter = TypeAdapter(MotorMessage)
 
 
-def parse_message_json(json_str: str) -> SupportedMessage:
-    """Parse JSON string into one of the supported message types."""
-    return _supported_message_adapter.validate_json(json_str)
+def parse_message_json(
+    json_str: str, expected_type: ExpectedMessageType = "auto"
+) -> SupportedMessage:
+    """Parse JSON string into one supported type, optionally constrained by expected_type."""
+    if expected_type == "auto":
+        return _supported_message_adapter.validate_json(json_str)
+    if expected_type == "sensor":
+        return _sensor_message_adapter.validate_json(json_str)
+    if expected_type == "display":
+        return _display_message_adapter.validate_json(json_str)
+    if expected_type == "motor":
+        return _motor_message_adapter.validate_json(json_str)
+
+    raise ValueError(f"Unexpected expected_type: {expected_type}")

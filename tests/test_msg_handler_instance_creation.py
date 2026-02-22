@@ -2,7 +2,14 @@ import pytest
 import json
 from datetime import datetime
 from pydantic import ValidationError
-from msg_handler.schemas import SensorMessage, SensorPayload, HeartBeatPayload
+from msg_handler.schemas import (
+    SensorMessage,
+    SensorPayload,
+    HeartBeatPayload,
+    DisplayMessage,
+    MotorMessage,
+    parse_message_json,
+)
 
 # --- Normal Case Tests ---
 
@@ -152,3 +159,30 @@ def test_validation_error_unknown_payload_structure():
                 # Fits neither SensorPayload nor HeartBeatPayload
             },
         )
+
+
+def test_parse_display_message_with_expected_type():
+    json_str = json.dumps(
+        {
+            "sender_id": "display_01",
+            "timestamp": "2026-01-01T00:00:00",
+            "is_override_mode": False,
+            "sensor_display_dict": {},
+            "moter_mode": "folded",
+        }
+    )
+    parsed = parse_message_json(json_str, expected_type="display")
+    assert isinstance(parsed, DisplayMessage)
+
+
+def test_parse_motor_message_with_expected_type():
+    json_str = json.dumps(
+        {
+            "sender_id": "motor_01",
+            "timestamp": "2026-01-01T00:00:00",
+            "is_override_mode": True,
+            "ordered_mode": "stop",
+        }
+    )
+    parsed = parse_message_json(json_str, expected_type="motor")
+    assert isinstance(parsed, MotorMessage)
