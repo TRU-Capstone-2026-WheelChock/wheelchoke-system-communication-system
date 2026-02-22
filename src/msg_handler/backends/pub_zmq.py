@@ -13,6 +13,7 @@ class ZmqPublisher(BasePublisher):
     Attributes:
         endpoint: ZMQ connection string.
         is_connect: If True, performs 'connect'. If False, performs 'bind'.
+        topic: Optional fixed topic prefix for all outgoing messages.
         context: Optional shared ZMQ context.
         hwm: PUB socket send high water mark.
         is_own_context: True when context is internally created.
@@ -22,12 +23,14 @@ class ZmqPublisher(BasePublisher):
         self,
         endpoint: str = "tcp://localhost:5555",
         is_connect: bool = True,
+        topic: str = "",
         context: zmq.Context | None = None,
         hwm: int = 1000,
     ):
         super().__init__()
         self.endpoint = endpoint
         self.is_connect = is_connect
+        self.topic = topic
         self.hwm = hwm
         self.ctx = context
         self.is_own_context: bool = context is None
@@ -72,7 +75,8 @@ class ZmqPublisher(BasePublisher):
         if not self.socket:
             logger.error("Attempted to send data but socket is not connected.")
             raise ConnectionError("Not connected. Call connect() first.")
-        self.socket.send_string(data)
+        msg = f"{self.topic} {data}" if self.topic else data
+        self.socket.send_string(msg)
 
     def close(self):
         """Close socket. Terminate context only when this instance owns it."""
@@ -92,6 +96,7 @@ class AsyncZmqPublisher(AsyncBasePublisher):
     Attributes:
         endpoint: ZMQ connection string.
         is_connect: If True, performs 'connect'. If False, performs 'bind'.
+        topic: Optional fixed topic prefix for all outgoing messages.
         context: Optional shared ZMQ asyncio context.
         hwm: PUB socket send high water mark.
         is_own_context: True when context is internally created.
@@ -101,12 +106,14 @@ class AsyncZmqPublisher(AsyncBasePublisher):
         self,
         endpoint: str = "tcp://localhost:5555",
         is_connect: bool = True,
+        topic: str = "",
         context: zmq.asyncio.Context | None = None,
         hwm: int = 1000,
     ):
         super().__init__()
         self.endpoint = endpoint
         self.is_connect = is_connect
+        self.topic = topic
         self.hwm = hwm
         self.ctx = context
         self.is_own_context: bool = context is None
@@ -151,7 +158,8 @@ class AsyncZmqPublisher(AsyncBasePublisher):
         if not self.socket:
             logger.error("Attempted to send data but socket is not connected.")
             raise ConnectionError("Not connected. Call connect() first.")
-        await self.socket.send_string(data)
+        msg = f"{self.topic} {data}" if self.topic else data
+        await self.socket.send_string(msg)
 
     async def close(self):
         """Close socket. Terminate context only when this instance owns it."""
