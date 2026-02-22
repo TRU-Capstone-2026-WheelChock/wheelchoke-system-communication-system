@@ -1,5 +1,7 @@
 import os
 from typing import Literal, Union, List
+import zmq
+import zmq.asyncio
 from pydantic import BaseModel, Field
 from .sub_base import BaseSubscriber, AsyncBaseSubscriber
 from .backends.sub_zmq import ZmqSubscriber, AsyncZmqSubscriber
@@ -18,6 +20,9 @@ class ZmqSubOptions(BaseModel):
         topics: List of topics to subscribe to.
         is_bind: Whether to bind or connect to the endpoint.
         expected_type: Expected message kind to parse ("auto" | "sensor" | "display" | "motor").
+        hwm: SUB socket receive high water mark.
+    Note:
+        'bind' for permanent infrastructure (start these first); 'connect' for temporary or secondary components.
     """
 
     backend_type: Literal["zmq"] = "zmq"
@@ -25,11 +30,12 @@ class ZmqSubOptions(BaseModel):
     topics: List[str] = Field(default_factory=lambda: [""])
     is_bind: bool = True
     expected_type: ExpectedMessageType = "auto"
+    hwm: int = 1000
 
 
 class MqttSubOptions(BaseModel):
     """
-    Configuration options for MQTT subscriber.
+    Configuration options for MQTT subscriber.NOT USABLE
 
     Attributes:
         backend_type: Fixed literal for MQTT backend.
@@ -47,12 +53,18 @@ class MqttSubOptions(BaseModel):
 SubscriberOptions = Union[ZmqSubOptions, MqttSubOptions]
 
 
-def get_subscriber(options: SubscriberOptions) -> BaseSubscriber:
+def get_subscriber(
+    options: SubscriberOptions,
+    context: zmq.Context | None = None
+) -> BaseSubscriber:
     """
     Factory method to create a synchronous subscriber.
 
     Args:
         options: Configuration object for the chosen backend.
+        context: Optional shared ZMQ context.
+        Note:
+            `options.hwm` is applied as SUB receive high water mark.
     """
     if options.backend_type == "zmq":
         return ZmqSubscriber(
@@ -60,6 +72,8 @@ def get_subscriber(options: SubscriberOptions) -> BaseSubscriber:
             topics=options.topics,
             is_bind=options.is_bind,
             expected_type=options.expected_type,
+            context=context,
+            hwm=options.hwm,
         )
     elif options.backend_type == "mqtt":
         raise NotImplementedError("MQTT backend is not implemented yet.")
@@ -67,12 +81,18 @@ def get_subscriber(options: SubscriberOptions) -> BaseSubscriber:
         raise ValueError(f"Unknown backend type: {options.backend_type}")
 
 
-def get_async_subscriber(options: SubscriberOptions) -> AsyncBaseSubscriber:
+def get_async_subscriber(
+    options: SubscriberOptions,
+    context: zmq.asyncio.Context | None = None
+) -> AsyncBaseSubscriber:
     """
     Factory method to create an asynchronous subscriber.
 
     Args:
         options: Configuration object for the chosen backend.
+        context: Optional shared ZMQ asyncio context.
+        Note:
+            `options.hwm` is applied as SUB receive high water mark.
     """
     if options.backend_type == "zmq":
         return AsyncZmqSubscriber(
@@ -80,6 +100,8 @@ def get_async_subscriber(options: SubscriberOptions) -> AsyncBaseSubscriber:
             topics=options.topics,
             is_bind=options.is_bind,
             expected_type=options.expected_type,
+            context=context,
+            hwm=options.hwm,
         )
     elif options.backend_type == "mqtt":
         raise NotImplementedError("MQTT backend is not implemented yet.")
