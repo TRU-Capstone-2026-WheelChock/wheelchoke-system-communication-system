@@ -4,6 +4,18 @@ from ..sub_base import BaseSubscriber, AsyncBaseSubscriber
 from ..schemas import ExpectedMessageType, parse_message_json
 
 
+def _unwrap_topic_prefixed_payload(raw_msg: str) -> str:
+    """Return JSON payload part from `topic + space + json`, or raw_msg if already JSON."""
+    if raw_msg.lstrip().startswith("{"):
+        return raw_msg
+
+    topic_and_payload = raw_msg.split(" ", 1)
+    if len(topic_and_payload) == 2 and topic_and_payload[1].lstrip().startswith("{"):
+        return topic_and_payload[1]
+
+    return raw_msg
+
+
 class ZmqSubscriber(BaseSubscriber):
     """
     Synchronous ZeroMQ implementation of a subscriber.
@@ -66,7 +78,8 @@ class ZmqSubscriber(BaseSubscriber):
 
         while self._running:
             try:
-                json_str = self.socket.recv_string()
+                raw_msg = self.socket.recv_string()
+                json_str = _unwrap_topic_prefixed_payload(raw_msg)
                 yield parse_message_json(json_str, expected_type=self.expected_type)
             except zmq.ZMQError:
                 break
@@ -149,7 +162,8 @@ class AsyncZmqSubscriber(AsyncBaseSubscriber):
 
         while self._running:
             try:
-                json_str = await self.socket.recv_string()
+                raw_msg = await self.socket.recv_string()
+                json_str = _unwrap_topic_prefixed_payload(raw_msg)
                 yield parse_message_json(json_str, expected_type=self.expected_type)
             except zmq.ZMQError:
                 break

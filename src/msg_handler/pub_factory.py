@@ -14,6 +14,7 @@ class ZmqPubOptions(BaseModel):
         backend_type: Fixed literal for ZMQ backend.
         endpoint: ZMQ connection string.
         is_connect: If True, uses 'connect'; if False, uses 'bind'.
+        topic: Fixed topic prefix for all outgoing messages. Empty string disables topic prefix.
         context: Optional shared ZMQ non/asyncio context.
         hwm: PUB socket send high water mark.
 
@@ -25,6 +26,7 @@ class ZmqPubOptions(BaseModel):
     backend_type: Literal["zmq"] = "zmq"
     endpoint: str = "tcp://localhost:5555"
     is_connect: bool = True
+    topic: str = ""
     context: zmq.asyncio.Context | zmq.Context | None = None
     hwm: int = 1000
 
@@ -70,6 +72,7 @@ def get_publisher(
         return ZmqPublisher(
             endpoint=options.endpoint,
             is_connect=options.is_connect,
+            topic=options.topic,
             context=sync_context,
             hwm=options.hwm,
         )
@@ -102,6 +105,7 @@ def get_async_publisher(
         return AsyncZmqPublisher(
             endpoint=options.endpoint,
             is_connect=options.is_connect,
+            topic=options.topic,
             context=async_context,
             hwm=options.hwm,
         )
