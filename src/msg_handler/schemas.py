@@ -114,10 +114,10 @@ class MotorMessage(BaseModel):
 SupportedMessage: TypeAlias = SensorMessage | DisplayMessage | MotorMessage
 ExpectedMessageType: TypeAlias = Literal["auto", "sensor", "display", "motor"]
 
-_supported_message_adapter = TypeAdapter(SupportedMessage)
-_sensor_message_adapter = TypeAdapter(SensorMessage)
-_display_message_adapter = TypeAdapter(DisplayMessage)
-_motor_message_adapter = TypeAdapter(MotorMessage)
+_supported_message_adapter: TypeAdapter[SupportedMessage] = TypeAdapter(SupportedMessage)
+_sensor_message_adapter: TypeAdapter[SensorMessage] = TypeAdapter(SensorMessage)
+_display_message_adapter: TypeAdapter[DisplayMessage] = TypeAdapter(DisplayMessage)
+_motor_message_adapter: TypeAdapter[MotorMessage] = TypeAdapter(MotorMessage)
 
 
 def parse_message_json(
