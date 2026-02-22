@@ -1,6 +1,8 @@
 # src/msg_handler/schemas.py
-from pydantic import BaseModel, Field, field_serializer
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Literal, TypeAlias
+
+from pydantic import BaseModel, Field, TypeAdapter, field_serializer
 
 """
 Payload definitions.
@@ -34,6 +36,11 @@ class HeartBeatPayload(BaseModel):
     Attributes:
         status: Device health status (e.g., 'Active').
         status_code: Numeric health code.
+
+    Note:
+        expected status information to send, is following
+        - Display: status of the display, starting up, Running, Error
+        - Motor: status of the motor, starting up, folded
     """
 
     status: str
@@ -83,3 +90,47 @@ class SensorMessage(BaseModel):
         
         raise NotImplementedError(f"{type(self.payload)} does not expected to have status")
 
+
+class SensorDisplayMode(BaseModel):
+    sensor_name: str
+    is_there_human : bool
+    human_exist_possibility: float | None = Field(default=None, ge=0.0, le=100.0)
+
+
+class DisplayMessage(BaseModel):
+    sender_id: str
+    timestamp : datetime = Field(default_factory=datetime.now)
+    is_override_mode : bool
+    sensor_display_dict : dict[str, SensorDisplayMode] = Field(default_factory=dict)
+    moter_mode : str
+
+class MotorMessage(BaseModel):
+    sender_id : str
+    timestamp : datetime = Field(default_factory=datetime.now)
+    is_override_mode : bool
+    ordered_mode : str
+
+
+SupportedMessage: TypeAlias = SensorMessage | DisplayMessage | MotorMessage
+ExpectedMessageType: TypeAlias = Literal["auto", "sensor", "display", "motor"]
+
+_supported_message_adapter = TypeAdapter(SupportedMessage)
+_sensor_message_adapter = TypeAdapter(SensorMessage)
+_display_message_adapter = TypeAdapter(DisplayMessage)
+_motor_message_adapter = TypeAdapter(MotorMessage)
+
+
+def parse_message_json(
+    json_str: str, expected_type: ExpectedMessageType = "auto"
+) -> SupportedMessage:
+    """Parse JSON string into one supported type, optionally constrained by expected_type."""
+    if expected_type == "auto":
+        return _supported_message_adapter.validate_json(json_str)
+    if expected_type == "sensor":
+        return _sensor_message_adapter.validate_json(json_str)
+    if expected_type == "display":
+        return _display_message_adapter.validate_json(json_str)
+    if expected_type == "motor":
+        return _motor_message_adapter.validate_json(json_str)
+
+    raise ValueError(f"Unexpected expected_type: {expected_type}")

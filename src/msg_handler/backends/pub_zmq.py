@@ -1,7 +1,6 @@
 import zmq
 import logging
 from ..pub_base import BasePublisher
-from ..schemas import SensorMessage
 
 logger = logging.getLogger(__name__)
 

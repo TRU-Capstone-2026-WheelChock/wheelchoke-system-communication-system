@@ -11,6 +11,9 @@ from msg_handler import (
     ZmqSubOptions,
     SensorMessage,
     SensorPayload,
+    DisplayMessage,
+    SensorDisplayMode,
+    MotorMessage,
 )
 
 
@@ -41,6 +44,29 @@ def create_valid_message(sender_id: str) -> SensorMessage:
             sensor_status="active",
             sensor_status_code=200,
         ),
+    )
+
+
+def create_display_message(sender_id: str) -> DisplayMessage:
+    return DisplayMessage(
+        sender_id=sender_id,
+        is_override_mode=False,
+        sensor_display_dict={
+            "front": SensorDisplayMode(
+                sensor_name="front_sensor",
+                is_there_human=True,
+                human_exist_possibility=88.0,
+            )
+        },
+        moter_mode="folded",
+    )
+
+
+def create_motor_message(sender_id: str) -> MotorMessage:
+    return MotorMessage(
+        sender_id=sender_id,
+        is_override_mode=False,
+        ordered_mode="unfolded",
     )
 
 
@@ -130,3 +156,68 @@ async def test_zmq_pub_sub_async():
         assert received_msg.payload.sensor_status == "active"
     except asyncio.TimeoutError:
         pytest.fail("Async Subscriber timed out! (Message not received)")
+
+
+def test_zmq_pub_sub_sync_expected_display():
+    endpoint = "tcp://127.0.0.1:5558"
+    received_msgs = []
+
+    def run_subscriber():
+        sub_opts = ZmqSubOptions(
+            endpoint=endpoint,
+            is_bind=True,
+            expected_type="display",
+        )
+        with get_subscriber(sub_opts) as sub:
+            sub.socket.setsockopt(zmq.RCVTIMEO, 2000)
+            try:
+                for msg in sub:
+                    received_msgs.append(msg)
+                    break
+            except zmq.Again:
+                print("TIMEOUT: Subscriber did not receive message.")
+
+    sub_thread = threading.Thread(target=run_subscriber)
+    sub_thread.start()
+    time.sleep(0.2)
+
+    pub_opts = ZmqPubOptions(endpoint=endpoint)
+    with get_publisher(pub_opts) as pub:
+        time.sleep(0.5)
+        pub.send(create_display_message("display_sync_tester"))
+
+    sub_thread.join(timeout=3.0)
+
+    assert len(received_msgs) == 1
+    assert isinstance(received_msgs[0], DisplayMessage)
+    assert received_msgs[0].moter_mode == "folded"
+
+
+@pytest.mark.asyncio
+async def test_zmq_pub_sub_async_expected_motor():
+    endpoint = "tcp://127.0.0.1:5559"
+
+    async def run_subscriber():
+        opts = ZmqSubOptions(
+            endpoint=endpoint,
+            is_bind=True,
+            expected_type="motor",
+        )
+        async with get_async_subscriber(opts) as sub:
+            async for msg in sub:
+                return msg
+
+    sub_task = asyncio.create_task(run_subscriber())
+    await asyncio.sleep(0.2)
+
+    pub_opts = ZmqPubOptions(endpoint=endpoint)
+    with get_publisher(pub_opts) as pub:
+        await asyncio.sleep(0.5)
+        pub.send(create_motor_message("motor_async_tester"))
+
+    try:
+        received_msg = await asyncio.wait_for(sub_task, timeout=3.0)
+        assert isinstance(received_msg, MotorMessage)
+        assert received_msg.ordered_mode == "unfolded"
+    except asyncio.TimeoutError:
+        pytest.fail("Async Subscriber timed out! (MotorMessage not received)")
