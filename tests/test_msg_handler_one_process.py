@@ -85,9 +85,9 @@ def test_zmq_pub_sub_sync():
         # --- 1. Subscriber Setup ---
         def run_subscriber():
             # Set is_bind=True to act as the server/host
-            sub_opts = ZmqSubOptions(endpoint=endpoint, is_bind=True)
+            sub_opts = ZmqSubOptions(endpoint=endpoint, is_bind=True, context=shared_ctx)
 
-            with get_subscriber(sub_opts, context=shared_ctx) as sub:
+            with get_subscriber(sub_opts) as sub:
                 # Set 2000ms receive timeout to prevent test hanging
                 sub.socket.setsockopt(zmq.RCVTIMEO, 2000)
 
@@ -106,9 +106,9 @@ def test_zmq_pub_sub_sync():
         time.sleep(0.2)
 
         # --- 2. Publisher Setup ---
-        pub_opts = ZmqPubOptions(endpoint=endpoint)  # is_connect=True by default
+        pub_opts = ZmqPubOptions(endpoint=endpoint, context=shared_ctx)  # is_connect=True by default
 
-        with get_publisher(pub_opts, context=shared_ctx) as pub:
+        with get_publisher(pub_opts) as pub:
             # Note: Sleep is critical here to mitigate the ZMQ 'Slow Joiner' phenomenon.
             # It ensures the TCP handshake and subscription filter are processed.
             time.sleep(0.5)
@@ -138,8 +138,8 @@ async def test_zmq_pub_sub_async():
 
     # --- 1. Async Subscriber Task ---
     async def run_subscriber():
-        opts = ZmqSubOptions(endpoint=endpoint, is_bind=True)
-        async with get_async_subscriber(opts, context=shared_ctx) as sub:
+        opts = ZmqSubOptions(endpoint=endpoint, is_bind=True, context=shared_ctx)
+        async with get_async_subscriber(opts) as sub:
             async for msg in sub:
                 return msg
 
@@ -150,8 +150,8 @@ async def test_zmq_pub_sub_async():
         await asyncio.sleep(0.2)
 
         # --- 2. Publisher Setup ---
-        pub_opts = ZmqPubOptions(endpoint=endpoint)
-        async with get_async_publisher(pub_opts, context=shared_ctx) as pub:
+        pub_opts = ZmqPubOptions(endpoint=endpoint, context=shared_ctx)
+        async with get_async_publisher(pub_opts) as pub:
             # Note: Mandatory delay for the async Slow Joiner fix.
             # Without this, the message is sent before the peer is fully ready.
             await asyncio.sleep(0.5)
@@ -183,8 +183,9 @@ def test_zmq_pub_sub_sync_expected_display():
                 endpoint=endpoint,
                 is_bind=True,
                 expected_type="display",
+                context=shared_ctx,
             )
-            with get_subscriber(sub_opts, context=shared_ctx) as sub:
+            with get_subscriber(sub_opts) as sub:
                 sub.socket.setsockopt(zmq.RCVTIMEO, 2000)
                 try:
                     for msg in sub:
@@ -197,8 +198,8 @@ def test_zmq_pub_sub_sync_expected_display():
         sub_thread.start()
         time.sleep(0.2)
 
-        pub_opts = ZmqPubOptions(endpoint=endpoint)
-        with get_publisher(pub_opts, context=shared_ctx) as pub:
+        pub_opts = ZmqPubOptions(endpoint=endpoint, context=shared_ctx)
+        with get_publisher(pub_opts) as pub:
             time.sleep(0.5)
             pub.send(create_display_message("display_sync_tester"))
 
@@ -221,8 +222,9 @@ async def test_zmq_pub_sub_async_expected_motor():
             endpoint=endpoint,
             is_bind=True,
             expected_type="motor",
+            context=shared_ctx,
         )
-        async with get_async_subscriber(opts, context=shared_ctx) as sub:
+        async with get_async_subscriber(opts) as sub:
             async for msg in sub:
                 return msg
 
@@ -230,8 +232,8 @@ async def test_zmq_pub_sub_async_expected_motor():
     try:
         await asyncio.sleep(0.2)
 
-        pub_opts = ZmqPubOptions(endpoint=endpoint)
-        async with get_async_publisher(pub_opts, context=shared_ctx) as pub:
+        pub_opts = ZmqPubOptions(endpoint=endpoint, context=shared_ctx)
+        async with get_async_publisher(pub_opts) as pub:
             await asyncio.sleep(0.5)
             await pub.send(create_motor_message("motor_async_tester"))
 
