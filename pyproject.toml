@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "msg_handler"
-version = "0.3.3"
+version = "0.4.0"
 description = "Sensor and Heartbeat message handling with MessageQueue system and Pydantic"
 authors = ["kmiya <miyak19@mytru.ca>"]
 readme = "README.md"

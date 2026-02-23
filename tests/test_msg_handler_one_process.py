@@ -16,6 +16,7 @@ from msg_handler import (
     SensorPayload,
     DisplayMessage,
     SensorDisplayMode,
+    MotorState,
     MotorMessage,
 )
 
@@ -61,7 +62,7 @@ def create_display_message(sender_id: str) -> DisplayMessage:
                 human_exist_possibility=88.0,
             )
         },
-        moter_mode="folded",
+        moter_mode=MotorState.DEPLOYING,
     )
 
 
@@ -69,7 +70,7 @@ def create_motor_message(sender_id: str) -> MotorMessage:
     return MotorMessage(
         sender_id=sender_id,
         is_override_mode=False,
-        ordered_mode="unfolded",
+        ordered_mode=MotorState.DEPLOYING,
     )
 
 
@@ -223,7 +224,7 @@ def test_zmq_pub_sub_sync_expected_display():
 
         assert len(received_msgs) == 1
         assert isinstance(received_msgs[0], DisplayMessage)
-        assert received_msgs[0].moter_mode == "folded"
+        assert received_msgs[0].moter_mode == MotorState.DEPLOYING
     finally:
         shared_ctx.term()
 
@@ -255,7 +256,7 @@ async def test_zmq_pub_sub_async_expected_motor():
 
         received_msg = await asyncio.wait_for(sub_task, timeout=3.0)
         assert isinstance(received_msg, MotorMessage)
-        assert received_msg.ordered_mode == "unfolded"
+        assert received_msg.ordered_mode == MotorState.DEPLOYING
     except asyncio.TimeoutError:
         pytest.fail("Async Subscriber timed out! (MotorMessage not received)")
     finally:
@@ -267,7 +268,7 @@ async def test_zmq_pub_sub_async_expected_motor():
 
 
 @pytest.mark.asyncio
-async def test_zmq_pub_sub_async_single_topic_filter():
+async def test_zmq_pub_sub_async_single_topic_filter() ->None:
     endpoint = "tcp://127.0.0.1:5560"
     shared_ctx = zmq.asyncio.Context()
 
@@ -322,7 +323,7 @@ async def test_zmq_pub_sub_async_single_topic_filter():
 
 
 @pytest.mark.asyncio
-async def test_zmq_pub_sub_async_subscribe_all_mixed_topics():
+async def test_zmq_pub_sub_async_subscribe_all_mixed_topics()->None:
     endpoint = "tcp://127.0.0.1:5561"
     shared_ctx = zmq.asyncio.Context()
 

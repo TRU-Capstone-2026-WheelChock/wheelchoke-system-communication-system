@@ -3,7 +3,6 @@
 __version__ = "0.1.0"
 
 # 1. Publishers
-from .pub_base import BasePublisher, AsyncBasePublisher
 from .pub_factory import get_publisher, get_async_publisher, ZmqPubOptions
 
 # 2. Subscribers
@@ -16,6 +15,7 @@ from .schemas import (
     HeartBeatPayload,
     DisplayMessage,
     SensorDisplayMode,
+    MotorState,
     MotorMessage,
     SupportedMessage,
     ExpectedMessageType,
@@ -28,6 +28,7 @@ __all__ = [
     "HeartBeatPayload",
     "DisplayMessage",
     "SensorDisplayMode",
+    "MotorState",
     "MotorMessage",
     "SupportedMessage",
     "ExpectedMessageType",
@@ -38,6 +39,4 @@ __all__ = [
     "get_async_publisher",
     "get_subscriber",
     "get_async_subscriber",
-    "BasePublisher",
-    "AsyncBasePublisher",
 ]
