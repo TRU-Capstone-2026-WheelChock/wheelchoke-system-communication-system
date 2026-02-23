@@ -1,6 +1,8 @@
 # src/msg_handler/schemas.py
 from datetime import datetime
+from enum import StrEnum
 from typing import Literal, TypeAlias
+
 
 from pydantic import BaseModel, Field, TypeAdapter, field_serializer
 
@@ -96,19 +98,31 @@ class SensorDisplayMode(BaseModel):
     is_there_human : bool
     human_exist_possibility: float | None = Field(default=None, ge=0.0, le=100.0)
 
+class MotorState(StrEnum):
+    DEAD = "DEAD"
+    ERROR = "ERROR"
+    WARN = "WARN"
+    DEPLOYED = "DEPLOYED"
+    DEPLOYING = "DEPLOYING"
+    FOLDING = "FOLDING"
+    FOLDED = "FOLDED"
+    OK = "OK"
+    STARTING = "STARTING"
+
 
 class DisplayMessage(BaseModel):
     sender_id: str
     timestamp : datetime = Field(default_factory=datetime.now)
     is_override_mode : bool
     sensor_display_dict : dict[str, SensorDisplayMode] = Field(default_factory=dict)
-    moter_mode : str
+    moter_mode : MotorState
+
 
 class MotorMessage(BaseModel):
     sender_id : str
     timestamp : datetime = Field(default_factory=datetime.now)
     is_override_mode : bool
-    ordered_mode : str
+    ordered_mode : MotorState
 
 
 SupportedMessage: TypeAlias = SensorMessage | DisplayMessage | MotorMessage

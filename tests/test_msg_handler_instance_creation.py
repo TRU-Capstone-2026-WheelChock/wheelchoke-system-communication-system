@@ -17,6 +17,7 @@ from msg_handler.schemas import (
     SensorPayload,
     HeartBeatPayload,
     DisplayMessage,
+    MotorState,
     MotorMessage,
     parse_message_json,
 )
@@ -178,7 +179,7 @@ def test_parse_display_message_with_expected_type():
             "timestamp": "2026-01-01T00:00:00",
             "is_override_mode": False,
             "sensor_display_dict": {},
-            "moter_mode": "folded",
+            "moter_mode": MotorState.FOLDED,
         }
     )
     parsed = parse_message_json(json_str, expected_type="display")
@@ -191,7 +192,7 @@ def test_parse_motor_message_with_expected_type():
             "sender_id": "motor_01",
             "timestamp": "2026-01-01T00:00:00",
             "is_override_mode": True,
-            "ordered_mode": "stop",
+            "ordered_mode": MotorState.DEPLOYING,
         }
     )
     parsed = parse_message_json(json_str, expected_type="motor")
