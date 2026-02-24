@@ -30,7 +30,6 @@ class SensorPayload(BaseModel):
     sensor_status_code: int
     # uptime : timedelta
 
-
 class HeartBeatPayload(BaseModel):
     """
     Payload for device health status (heartbeat).
@@ -49,6 +48,14 @@ class HeartBeatPayload(BaseModel):
     status_code: int
     # uptime : timedelta
 
+class GenericMessageDatatype(StrEnum):
+    SENSOR = "sensor"
+    HEARTBEAT = "heartbeat"
+    OVERRIDE_BUTTON = "override_button"
+
+    # debug/test servicer
+    TEST = "test"
+    FAIL = "fail"
 
 class SensorMessage(BaseModel):
     """
@@ -71,7 +78,7 @@ class SensorMessage(BaseModel):
     sender_id: str
     sender_name: str | None
     timestamp: datetime = Field(default_factory=datetime.now)
-    data_type: str
+    data_type: GenericMessageDatatype
     payload: SensorPayload | HeartBeatPayload
     sequence_no: int = 0
 
