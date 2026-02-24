@@ -14,6 +14,7 @@ from msg_handler import (
     ZmqSubOptions,
     SensorMessage,
     SensorPayload,
+    GenericMessageDatatype,
     DisplayMessage,
     SensorDisplayMode,
     MotorState,
@@ -28,21 +29,11 @@ def create_valid_message(sender_id: str) -> SensorMessage:
     Attributes:
         sender_id: Unique identifier for the sending entity.
     """
-    # just to display you can do this as well. (will be a problem if you do this)
-    # return SensorMessage(
-    #     sender_id=sender_id,
-    #     sender_name="Tester",
-    #     data_type="test",
-    #     payload={
-    #         "isThereHuman": False,
-    #         "sensor_status": "active",
-    #         "sensor_status_code": 200,
-    #     },
-    # )
+
     return SensorMessage(
         sender_id=sender_id,
         sender_name="Tester",
-        data_type="test",
+        data_type=GenericMessageDatatype.SENSOR,
         payload=SensorPayload(
             isThereHuman=False,
             sensor_status="active",

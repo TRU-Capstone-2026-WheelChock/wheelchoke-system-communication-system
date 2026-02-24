@@ -19,6 +19,7 @@ from msg_handler.schemas import (
     DisplayMessage,
     MotorState,
     MotorMessage,
+    GenericMessageDatatype,
     parse_message_json,
 )
 
@@ -30,7 +31,7 @@ def test_create_valid_sensor_message():
     data = {
         "sender_id": "sensor_unit_01",
         "sender_name": "Entrance Camera",
-        "data_type": "human_detection",
+        "data_type": GenericMessageDatatype.SENSOR,
         "payload": {
             "isThereHuman": True,
             "sensor_status": "detecting",
@@ -54,7 +55,7 @@ def test_create_valid_sensor_message_human_possibility():
     data = {
         "sender_id": "sensor_unit_01",
         "sender_name": "Entrance Camera",
-        "data_type": "human_detection",
+        "data_type": GenericMessageDatatype.SENSOR,
         "payload": {
             "isThereHuman": True,
             "sensor_status": "detecting",
@@ -79,7 +80,7 @@ def test_create_valid_heartbeat_message():
     data = {
         "sender_id": "system_mon",
         "sender_name": None,  # Check optional field
-        "data_type": "health_check",
+        "data_type": GenericMessageDatatype.SENSOR,
         "payload": {"status": "Alive", "status_code": 200},
     }
     msg = SensorMessage(**data)
@@ -96,7 +97,7 @@ def test_timestamp_auto_generation():
     msg = SensorMessage(
         sender_id="test",
         sender_name="test",
-        data_type="test",
+        data_type=GenericMessageDatatype.SENSOR,
         payload={"status": "ok", "status_code": 200},
     )
     assert isinstance(msg.timestamp, datetime)
@@ -111,7 +112,7 @@ def test_json_serialization_format():
         sender_id="test",
         sender_name="test",
         timestamp=dt,
-        data_type="test",
+        data_type=GenericMessageDatatype.SENSOR,
         payload={"status": "ok", "status_code": 200},
     )
 
@@ -133,7 +134,7 @@ def test_validation_error_missing_payload_field():
         SensorMessage(
             sender_id="fail",
             sender_name="fail",
-            data_type="fail",
+            data_type=GenericMessageDatatype.SENSOR,
             payload={
                 "status": "Alive"
                 # status_code is missing -> Invalid as HeartBeatPayload
@@ -149,7 +150,7 @@ def test_validation_error_invalid_type():
         SensorMessage(
             sender_id="fail",
             sender_name="fail",
-            data_type="fail",
+            data_type=GenericMessageDatatype.SENSOR,
             payload={
                 "isThereHuman": "NotBoolean",  # String provided where bool expected
                 "sensor_status": "ok",
@@ -164,7 +165,7 @@ def test_validation_error_unknown_payload_structure():
         SensorMessage(
             sender_id="fail",
             sender_name="fail",
-            data_type="fail",
+            data_type=GenericMessageDatatype.SENSOR,
             payload={
                 "unknown_key": 12345
                 # Fits neither SensorPayload nor HeartBeatPayload
