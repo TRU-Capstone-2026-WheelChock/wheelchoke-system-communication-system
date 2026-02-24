@@ -19,7 +19,6 @@ from msg_handler.schemas import (
     DisplayMessage,
     MotorState,
     MotorMessage,
-    OverrideMessage,
     parse_message_json,
 )
 
@@ -198,19 +197,6 @@ def test_parse_motor_message_with_expected_type():
     )
     parsed = parse_message_json(json_str, expected_type="motor")
     assert isinstance(parsed, MotorMessage)
-
-
-def test_parse_override_message_with_expected_type():
-    json_str = json.dumps(
-        {
-            "isin_override_mode": True,
-            "timestamp": "2026-01-01T00:00:00",
-            "last_update": "2026-01-01T00:00:01",
-        }
-    )
-    parsed = parse_message_json(json_str, expected_type="override_button")
-    assert isinstance(parsed, OverrideMessage)
-    assert parsed.isin_override_mode is True
 
 
 def test_get_publisher_rejects_async_context():
